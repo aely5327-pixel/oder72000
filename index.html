@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>烙角線上點餐</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+        
+        :root {
+            --color-bg: #F3E5D8;
+            --color-main: #8B5E3C;
+            --color-dark: #5C3D2E;
+            --color-white: #FFFFFF;
+            --color-ice: #2980b9; /* 冰飲標籤色 */
+            --color-hot: #c0392b; /* 熱飲標籤色 */
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: var(--color-bg);
+            color: #333;
+            margin: 0;
+            padding-bottom: 110px;
+        }
+
+        /* Header */
+        header {
+            background-color: var(--color-dark);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 90;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        header h1 { margin: 0; font-size: 18px; letter-spacing: 1px; }
+        header p { margin: 5px 0 0; font-size: 12px; opacity: 0.8; }
+
+        .container { max-width: 800px; margin: 0 auto; padding: 15px; }
+
+        /* Rules */
+        .rules-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--color-main);
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .rules-card h3 { 
+            margin: 0 0 10px 0; 
+            color: var(--color-main); 
+            font-size: 16px; 
+            display: flex; align-items: center; gap: 5px; 
+        }
+        .rules-content { font-size: 13px; color: #555; line-height: 1.6; }
+
+        /* Menu */
+        .cat-title {
+            text-align: center;
+            margin: 25px 0 15px;
+            font-weight: bold;
+            color: var(--color-dark);
+            font-size: 18px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        .cat-sub { display: block; font-size: 12px; color: #888; margin-top: 2px; font-weight: normal; }
+
+        .menu-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        @media(min-width: 600px) { .menu-grid { grid-template-columns: 1fr 1fr; } }
+
+        .menu-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .item-info { flex: 1; padding-right: 10px; }
+        .item-name { font-weight: bold; font-size: 15px; margin-bottom: 4px; color: #222; line-height: 1.4; }
+        .item-desc { font-size: 12px; color: #888; margin-bottom: 4px; }
+        .item-price { color: var(--color-main); font-weight: bold; }
+        
+        .badge { 
+            font-size: 10px; padding: 2px 6px; border-radius: 4px; 
+            color: white; margin-left: 5px; vertical-align: middle; display: inline-block;
+        }
+        .bg-red { background: #d9534f; }
+        .bg-gray { background: #555; }
+        .bg-ice { background: var(--color-ice); }
+        .bg-hot { background: var(--color-hot); }
+        .bg-canele { background: #8e44ad; }
+
+        /* Qty Controls */
+        .qty-box {
+            display: flex; align-items: center;
+            background: #f5f5f5; border-radius: 20px; padding: 2px;
+        }
+        .qty-btn {
+            width: 32px; height: 32px;
+            border-radius: 50%; border: none;
+            background: white; color: var(--color-main);
+            font-size: 18px; font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .qty-btn:active { background: #eee; }
+        .qty-val { width: 30px; text-align: center; font-weight: bold; font-size: 15px; }
+        .has-qty .qty-btn { background: var(--color-main); color: white; }
+
+        /* Bottom Bar */
+        .cart-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: white; padding: 15px 20px;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
+            z-index: 100;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .cart-info { font-size: 14px; font-weight: bold; color: var(--color-dark); }
+        .btn-copy {
+            background: var(--color-main); color: white;
+            border: none; padding: 12px 30px; border-radius: 30px;
+            font-weight: bold; font-size: 16px; cursor: pointer;
+            display: flex; align-items: center; gap: 8px;
+            box-shadow: 0 2px 5px rgba(139, 94, 60, 0.4);
+        }
+
+        /* Modal */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 200;
+            justify-content: center; align-items: center; padding: 20px;
+        }
+        .modal-content {
+            background: white; width: 100%; max-width: 500px;
+            border-radius: 12px; padding: 20px;
+            display: flex; flex-direction: column; max-height: 90vh;
+        }
+        .modal-header {
+            font-weight: bold; font-size: 18px; margin-bottom: 15px;
+            text-align: center; border-bottom: 1px solid #eee; padding-bottom: 10px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #999; }
+        
+        /* New Radio & Input Styles */
+        .options-area {
+            background: #f8f8f8; padding: 15px; border-radius: 8px; margin-bottom: 15px;
+        }
+        .radio-group {
+            display: flex; gap: 10px; margin-bottom: 10px;
+        }
+        .radio-btn {
+            flex: 1; padding: 10px; text-align: center;
+            border: 2px solid #ddd; border-radius: 8px;
+            cursor: pointer; font-weight: bold; color: #666;
+            background: white; transition: all 0.2s;
+        }
+        .radio-btn.active {
+            border-color: var(--color-main); background: #FDF2E9; color: var(--color-main);
+        }
+        .detail-input {
+            width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px;
+            font-size: 15px; outline: none; margin-bottom: 10px;
+            background-color: white;
+        }
+        .detail-input:focus { border-color: var(--color-main); }
+        
+        input[type="date"] { font-family: inherit; }
+
+        textarea {
+            width: 100%; flex: 1; min-height: 150px;
+            padding: 10px; border: 1px solid #ddd; border-radius: 8px;
+            font-size: 14px; resize: none; background: #fafafa;
+            font-family: inherit; line-height: 1.5; margin-bottom: 10px;
+        }
+        
+        .confirm-btn {
+            background: var(--color-main); color: white;
+            border: none; padding: 14px; border-radius: 8px;
+            font-weight: bold; font-size: 16px; width: 100%; cursor: pointer;
+        }
+        #copyMsg { 
+            text-align: center; color: #2e7d32; font-weight: bold; 
+            margin-bottom: 10px; display: none; background: #e8f5e9; padding: 8px; border-radius: 4px;
+        }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>CANELé du Quai 烙角</h1>
+    <p>線上菜單 & 預點系統</p>
+</header>
+
+<div class="container">
+    
+    <div class="rules-card">
+        <h3><i class="fa-solid fa-circle-exclamation"></i> 點餐須知</h3>
+        <div class="rules-content">
+            • 餐點皆為一人作業，請耐心等待<br>
+            • 餐點只能調整辣度，無法接受其他調整<br>
+            • 預訂餐點無法取消或更改<br>
+            • 可麗露預訂 6 顆以上須先匯款<br>
+            • 若需外帶請務必備註「外帶」
+        </div>
+    </div>
+
+    <div id="menu-container"></div>
+
+</div>
+
+<div class="cart-bar">
+    <div class="cart-info">
+        已選：<span id="total-qty">0</span> 項<br>
+        預估：$<span id="total-price">0</span>
+    </div>
+    <button class="btn-copy" onclick="openModal()">
+        <i class="fa-regular fa-copy"></i> 填寫與複製
+    </button>
+</div>
+
+<!-- 彈窗 -->
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span>確認訂單內容</span>
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+        </div>
+        
+        <div class="options-area">
+            <div class="radio-group">
+                <div class="radio-btn active" id="btn-in" onclick="selectType('in')">
+                    <i class="fa-solid fa-utensils"></i> 內用
+                </div>
+                <div class="radio-btn" id="btn-out" onclick="selectType('out')">
+                    <i class="fa-solid fa-bag-shopping"></i> 外帶
+                </div>
+            </div>
+            
+            <input type="date" id="dateInput" class="detail-input" oninput="renderText()">
+            <input type="text" id="detailInput" class="detail-input" placeholder="請填寫：人數 / 用餐時間" oninput="renderText()">
+        </div>
+
+        <div id="copyMsg">✅ 已複製！請切換 App 貼上</div>
+        <textarea id="finalText" readonly></textarea>
+
+        <button class="confirm-btn" onclick="copyText()">
+            一鍵複製內容
+        </button>
+    </div>
+</div>
+
+<script>
+    // 菜單資料
+    const menuData = [
+        {
+            category: "烙角甜點", sub: "Dessert (可麗露)",
+            items: [
+                { id: 'd1_1', name: '可麗露-經典原味', price: 90, badge: '經典' },
+                { id: 'd1_2', name: '可麗露-味噌太妃', price: 95, badge: '人氣' },
+                { id: 'd1_3', name: '可麗露-檸檬鹽之花', price: 95 },
+                { id: 'd1_4', name: '可麗露-茶影(鐵觀音)', price: 95 },
+                { id: 'd2', name: '北海道起司蛋糕', price: 160 }
+            ]
+        },
+        {
+            category: "烙角貓裏咖哩", sub: "Curry (含堅果/辛口)",
+            items: [
+                { id: 'c1', name: '香煎時蔬咖哩飯', price: 290 },
+                { id: 'c2', name: '炙燒舒肥雞胸太陽蛋咖哩飯', price: 350 },
+                { id: 'c3', name: '漢堡排日式歐姆蛋包咖哩飯', price: 395, badge: '牛豬混合' }
+            ]
+        },
+        {
+            category: "烤飯", sub: "Paella (薑黃飯)",
+            items: [
+                { id: 'p1', name: '漢堡排薑黃烤飯佐法式紅酒醬', price: 345, badge: '牛豬混合' },
+                { id: 'p2', name: '海鮮薑黃烤飯', price: 370 }
+            ]
+        },
+        {
+            category: "義大利麵", sub: "Pasta",
+            items: [
+                { id: 'pa1', name: '白酒蛤蠣義大利麵', price: 330, spicy: true },
+                { id: 'pa2', name: '舒肥雞胸蒜香辣味天使麵', price: 340, spicy: true },
+                { id: 'pa3', name: '茴香酒嗆海老蕃茄細扁麵', price: 370 }
+            ]
+        },
+        {
+            category: "單品", sub: "À la carte",
+            items: [
+                { id: 'a1', name: '法國麵包佐金椿初榨茶油', price: 160 },
+                { id: 'a2', name: '舒肥雞胸佐巴薩米克醋', price: 190 },
+                { id: 'a3', name: '炸薯條佐蒜香松露醬', price: 200 },
+                { id: 'a4', name: '香草蒜味奶油烤雨來菇佐法國麵包', price: 230, badge: '限量' }
+            ]
+        },
+        {
+            category: "咖啡", sub: "Coffee (請選冷/熱)",
+            items: [
+                { id: 'cf1_i', name: '美式咖啡 (冰)', price: 100, type: 'ice' },
+                { id: 'cf1_h', name: '美式咖啡 (熱)', price: 100, type: 'hot' },
+                
+                { id: 'cf2', name: '酸柑茶美式 (冰)', price: 140, type: 'ice' },
+                
+                { id: 'cf3_i', name: '經典咖啡拿鐵 (冰)', price: 150, type: 'ice' },
+                { id: 'cf3_h', name: '經典咖啡拿鐵 (熱)', price: 150, type: 'hot' },
+                
+                { id: 'cf4_i', name: '焦糖瑪奇朵 (冰)', price: 170, type: 'ice' },
+                { id: 'cf4_h', name: '焦糖瑪奇朵 (熱)', price: 170, type: 'hot' },
+                
+                { id: 'cf5_i', name: '擂茶咖啡拿鐵 (冰)', price: 180, badge: '含堅果', type: 'ice' },
+                { id: 'cf5_h', name: '擂茶咖啡拿鐵 (熱)', price: 180, badge: '含堅果', type: 'hot' },
+                
+                { id: 'cf6_i', name: '桂花釀拿鐵 (冰)', price: 180, type: 'ice' },
+                { id: 'cf6_h', name: '桂花釀拿鐵 (熱)', price: 180, type: 'hot' }
+            ]
+        },
+        {
+            category: "茶", sub: "Tea (請選冷/熱)",
+            items: [
+                { id: 't1', name: '冷泡錫蘭紅茶 (冰/無糖)', price: 90, type: 'ice' },
+                { id: 't2', name: '南投名間鄉紅茶 (熱/無糖)', price: 90, type: 'hot' },
+                
+                { id: 't3_i', name: '貓裏客家酸柑茶 (冰/無糖)', price: 100, type: 'ice' },
+                { id: 't3_h', name: '貓裏客家酸柑茶 (熱/無糖)', price: 100, type: 'hot' },
+                
+                { id: 't4_i', name: '楊桃烏龍茶 (冰)', price: 130, type: 'ice' },
+                { id: 't4_h', name: '楊桃烏龍茶 (熱)', price: 130, type: 'hot' }
+            ]
+        },
+        {
+            category: "其他飲品", sub: "Drinks (請選冷/熱)",
+            items: [
+                { id: 'o1', name: '蘋果汁 (冰)', price: 70, type: 'ice' },
+                { id: 'o2', name: '可樂 (冰)', price: 70, type: 'ice' },
+                { id: 'o3', name: '現打季節果汁 (冰)', price: 120, type: 'ice' },
+                
+                { id: 'o4_i', name: '抹茶歐蕾 (冰)', price: 185, type: 'ice' },
+                { id: 'o4_h', name: '抹茶歐蕾 (熱)', price: 185, type: 'hot' },
+                
+                { id: 'o5_i', name: '可可歐蕾 (冰)', price: 185, type: 'ice' },
+                { id: 'o5_h', name: '可可歐蕾 (熱)', price: 185, type: 'hot' }
+            ]
+        }
+    ];
+
+    let cart = {};
+    let currentType = 'in';
+
+    function initMenu() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('dateInput').value = today;
+
+        const container = document.getElementById('menu-container');
+        let html = '';
+
+        menuData.forEach(cat => {
+            html += `<div class="cat-title">${cat.category}<span class="cat-sub">${cat.sub}</span></div>`;
+            html += `<div class="menu-grid">`;
+            
+            cat.items.forEach(item => {
+                let badgeHtml = '';
+                if(item.spicy) badgeHtml += `<span class="badge bg-red">辣</span>`;
+                if(item.badge) badgeHtml += `<span class="badge bg-gray">${item.badge}</span>`;
+                if(item.type === 'ice') badgeHtml += `<span class="badge bg-ice">I</span>`;
+                if(item.type === 'hot') badgeHtml += `<span class="badge bg-hot">H</span>`;
+
+                let priceText = item.showPrice ? item.showPrice : `$${item.price}`;
+
+                html += `
+                    <div class="menu-item" id="card-${item.id}">
+                        <div class="item-info">
+                            <div class="item-name">${item.name} ${badgeHtml}</div>
+                            <div class="item-price">${priceText}</div>
+                        </div>
+                        <div class="qty-box" id="box-${item.id}">
+                            <button class="qty-btn" onclick="updateQty('${item.id}', -1)">-</button>
+                            <div class="qty-val" id="val-${item.id}">0</div>
+                            <button class="qty-btn" onclick="updateQty('${item.id}', 1)">+</button>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `</div>`;
+        });
+        container.innerHTML = html;
+    }
+
+    function updateQty(id, delta) {
+        if (!cart[id]) cart[id] = 0;
+        cart[id] += delta;
+        if (cart[id] < 0) cart[id] = 0;
+
+        document.getElementById(`val-${id}`).innerText = cart[id];
+        const box = document.getElementById(`box-${id}`);
+        if(cart[id] > 0) box.classList.add('has-qty');
+        else box.classList.remove('has-qty');
+
+        updateCartBar();
+    }
+
+    function updateCartBar() {
+        let qty = 0; let price = 0;
+        menuData.forEach(cat => {
+            cat.items.forEach(item => {
+                const count = cart[item.id] || 0;
+                if(count > 0) {
+                    qty += count;
+                    price += count * item.price;
+                }
+            });
+        });
+        document.getElementById('total-qty').innerText = qty;
+        document.getElementById('total-price').innerText = price;
+    }
+
+    function selectType(type) {
+        currentType = type;
+        const input = document.getElementById('detailInput');
+        
+        document.getElementById('btn-in').className = type === 'in' ? 'radio-btn active' : 'radio-btn';
+        document.getElementById('btn-out').className = type === 'out' ? 'radio-btn active' : 'radio-btn';
+
+        if (type === 'in') {
+            input.placeholder = "請填寫：人數 / 用餐時間";
+        } else {
+            input.placeholder = "請填寫：取餐時間";
+        }
+        
+        renderText();
+    }
+
+    function renderText() {
+        let itemsStr = "";
+        let hasItem = false;
+
+        menuData.forEach(cat => {
+            cat.items.forEach(item => {
+                const count = cart[item.id] || 0;
+                if(count > 0) {
+                    itemsStr += `[${item.name} * ${count}]\n`;
+                    hasItem = true;
+                }
+            });
+        });
+
+        if (!hasItem) itemsStr = "(尚未選擇餐點)\n";
+
+        const detail = document.getElementById('detailInput').value.trim();
+        const dateVal = document.getElementById('dateInput').value;
+        let dateStr = dateVal ? ` ${dateVal}` : "";
+
+        let dineInLine = "-內用：";
+        let takeOutLine = "-外帶：";
+
+        if (currentType === 'in') {
+            dineInLine += `${dateStr} ${detail}`;
+        } else {
+            takeOutLine += `${dateStr} ${detail}`;
+        }
+
+        const finalTemplate = `填好請回傳官方Line@ /Facebook / Instagram 烙角可麗露廚房
+
+🔺預訂餐點、飲品、甜點：
+（餐點只能調整辣度無法接受其他調整）
+（皆為一人作業當天加點須耐心等待）
+（預訂餐點無法取消、更改）
+（如需外帶的品項請備註「外帶」）
+（可麗露品項預訂6顆以上須先完成匯款）
+
+［品項*數量］
+${itemsStr}
+${dineInLine}
+
+${takeOutLine}
+
+-所有預留/訂購/訂位，不管透過任何管道來訊，皆需收到烙角的回覆才算成功。
+如未收到回覆皆不成立！請見諒！`;
+
+        document.getElementById('finalText').value = finalTemplate;
+    }
+
+    function copyText() {
+        const textArea = document.getElementById('finalText');
+        textArea.select();
+        textArea.setSelectionRange(0, 99999);
+        
+        try {
+            document.execCommand('copy');
+            showSuccess();
+        } catch (err) {
+            if(navigator.clipboard) {
+                navigator.clipboard.writeText(textArea.value).then(showSuccess);
+            }
+        }
+    }
+
+    function showSuccess() {
+        const msg = document.getElementById('copyMsg');
+        msg.style.display = 'block';
+        setTimeout(() => { msg.style.display = 'none'; }, 2000);
+    }
+
+    function openModal() {
+        renderText();
+        document.getElementById('modal').style.display = 'flex';
+    }
+    
+    function closeModal() {
+        document.getElementById('modal').style.display = 'none';
+    }
+
+    window.onclick = function(e) {
+        if(e.target == document.getElementById('modal')) closeModal();
+    }
+
+    initMenu();
+
+</script>
+</body>
+</html>
